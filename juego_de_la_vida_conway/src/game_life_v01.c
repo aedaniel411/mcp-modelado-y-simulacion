@@ -2,13 +2,69 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #include <ncurses.h>
 
-#define DELAY 600000
+//#define DELAY 600000
+#define DELAY 1
+
+void inicializar (int *mat, int rows, int cols) {
+	for (int i = 0; i < rows; i++) {			
+		for (int j = 0; j < cols; j++ ) {
+			mat[i * cols + j] = rand() % 2;
+		}
+	}
+}
+
+void mostrar (int *mat, int rows, int cols) {
+	char cBlock = (char)0x2588;
+	
+	for (int i = 0; i < rows; i++) {			
+		for (int j = 0; j < cols; j++ ) {
+			if (mat[i * cols + j] == 1) { 
+				mvaddch(i, j, cBlock);			
+			}
+		}
+	}
+}
+
+int sumvivos (int *mat, int row, int rows, int col, int cols) {
+	int sum = 0;
+	
+	for (int r = (row - 1); r <= row + 1; r++) { 
+		for (int c = col - 1; c <= col + 1; c++) {
+			if (!((r == row) && (c == col))) {
+				if ((r >= 0) && (r < rows)) {
+					if ((c >= 0) && (c < cols)) {
+						sum = sum + mat[r * cols + c];
+					}
+				}
+			}
+		}
+	}
+	
+	return sum;
+} 
+
+int viveomuere (int actual, int vivos) {
+	int siguiente = 0;
+	if (actual == 0) {
+		if (vivos == 3) {				//Nacimiento
+			siguiente = 1;
+		}
+	} else {
+		siguiente = 1;
+		if (vivos < 2) {
+			siguiente = 0; 			//muerte por soledad
+		}
+		if (vivos > 3) {
+			siguiente = 0;				//muerte por superpoblacion
+		}
+	}
+	
+	return siguiente;
+}
 
 int main() {	
-	char cBlock = (char)0x2588;
 	int rows, cols, sum = 0;
 	
 	srand (time(NULL)); 
@@ -18,78 +74,44 @@ int main() {
 	
 	getmaxyx(stdscr, rows, cols); 				
 	rows = rows - 1;
+			
+	int *matA, *matB; 
+	matA = (int *)calloc( cols * rows, sizeof(int));
 	
-	int matA[rows][cols];
-	int matB[rows][cols];
+	inicializar (matA, rows, cols);
 	
-	for (int i = 0; i < rows; i++) {			
-		for (int j = 0; j < cols; j++ ) {
-			matA[i][j] = rand() % 2;
-		}
-	}
-	
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++ ) {
-			if (matA[i][j] == 1) { 
-				mvaddch(i, j, cBlock);			
-			}
-		}
-	}
+	mostrar (matA, rows, cols);
 		
 	refresh();									
 	getch();
+	
 	int g = 1;
 	while (1) {
+		
+		matB = (int *)calloc( cols * rows, sizeof(int));
+		
 		for (int i = 0; i < rows; i++) {
 			for (int j = 0; j < cols; j ++) {
-				sum = 0;
-				for (int r = (i - 1); r <= i + 1; r++) { 
-					for (int c = j - 1; c <= j + 1; c++) {
-						if (!((r == i) && (c == j))) {
-							if ((r >= 0) && (r < rows)) {
-								if ((c >= 0) && (c < cols)) {
-									sum = sum + matA[r][c];
-								}
-							}
-						}
-					}
-				}
-				if (matA[i][j] == 0) {
-					if (sum == 3) { 				//Nacimiento
-						matB[i][j] = 1;
-					}
-				} else {
-					matB[i][j] = 1;
-					if (sum < 2) {
-						matB[i][j] = 0; 			//muerte por soledad
-					}
-					if (sum > 3) {
-						matB[i][j] = 0;				//muerte por superpoblacion
-					}
-				}
+				sum = sumvivos (matA, i, rows, j, cols);
 				
-			}
-		}
-	
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < cols; j++) {
-				matA[i][j] = matB[i][j];
+				matB [i * cols + j] = viveomuere (matA [i * cols + j], sum);
 			}
 		}
 		
+		free(matA);
+		matA = matB;
+
 		clear();
-		for (int i = 0; i < rows; i++) {
-			for (int j = 0; j < cols; j++ ) {
-				if (matA[i][j] == 1) { 
-					mvaddch(i, j, cBlock);			
-				}
-			}
-		}
+		mostrar (matA, rows, cols);
 		mvprintw (rows, 1, "Generacion %d", g++);
-		refresh();									
-		usleep(DELAY);
+		refresh();			
+								
+//		usleep(DELAY);
+		sleep(DELAY);	
 		
-	}		
+	}
+	
+	free (matB);
 	endwin();
 	return 0;
 }
