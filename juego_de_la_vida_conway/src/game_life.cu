@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <string.h>
 #include <time.h>
@@ -22,16 +23,19 @@ __global__ void inicializar (int *mat, int rows, int cols, unsigned int seed) {
 	mat[index] = curand (&state) % 2;
 }
 
-void mostrar (int *mat, int rows, int cols) {
+int mostrar (int *mat, int rows, int cols) {
 	char cBlock = (char)0x2588;
+	int total = 0;
 
 	for (int i = 0; i < rows; i++) {
 		for (int j = 0; j < cols; j++ ) {
 			if (mat[i * cols + j] == 1) {
 				mvaddch(i, j, cBlock);
+				total += 1;
 			}
 		}
 	}
+	return total;
 }
 
 __device__ int sumvivos (int *mat, int row, int rows, int col, int cols) {
@@ -92,7 +96,7 @@ int cuantosBloques(int N, int hilos) {
 }
 
 int main() {
-	int rows, cols; //, sum = 0;
+	int rows, cols, vivos;
 
 	initscr();
 	curs_set(FALSE);
@@ -131,8 +135,8 @@ int main() {
 		dmatA = dmatB;
         cudaFree (dmatB);
 		clear();
-		mostrar (matA, rows, cols);
-		mvprintw (rows, 1, "Generacion %d", g++);
+		vivos = mostrar (matA, rows, cols);
+		mvprintw (rows, 1, "Generacion %d, individuos vivos %d/%d, %d bloques de %d hilos c/u, %d hilos totales", g++, vivos, cols * rows,dimBloques.x * dimBloques.y, 16 * 16,dimBloques.x * dimBloques.y * 16 * 16 );
 		refresh();
 
 //		usleep(DELAY);

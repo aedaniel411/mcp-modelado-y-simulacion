@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include <ncurses.h>
@@ -15,16 +16,19 @@ void inicializar (int *mat, int rows, int cols) {
 	}
 }
 
-void mostrar (int *mat, int rows, int cols) {
+int mostrar (int *mat, int rows, int cols) {
 	char cBlock = (char)0x2588;
+	int total = 0; 
 	
 	for (int i = 0; i < rows; i++) {			
 		for (int j = 0; j < cols; j++ ) {
 			if (mat[i * cols + j] == 1) { 
-				mvaddch(i, j, cBlock);			
+				mvaddch(i, j, cBlock);
+				total += 1;			
 			}
 		}
 	}
+	return total;
 }
 
 int sumvivos (int *mat, int row, int rows, int col, int cols) {
@@ -65,7 +69,7 @@ int viveomuere (int actual, int vivos) {
 }
 
 int main() {	
-	int rows, cols, sum = 0;
+	int rows, cols, sum = 0, vivos;
 	
 	srand (time(NULL)); 
 	
@@ -102,8 +106,8 @@ int main() {
 		matA = matB;
 
 		clear();
-		mostrar (matA, rows, cols);
-		mvprintw (rows, 1, "Generacion %d", g++);
+		vivos = mostrar (matA, rows, cols);
+		mvprintw (rows, 1, "Generacion %d, individuos vivos %d", g++, vivos);
 		refresh();			
 								
 //		usleep(DELAY);
